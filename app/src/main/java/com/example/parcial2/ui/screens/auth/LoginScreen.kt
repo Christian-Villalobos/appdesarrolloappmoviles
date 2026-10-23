@@ -1,5 +1,6 @@
-package com.example.parcial2.ui
+package com.example.parcial2.ui.screens.auth
 
+import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -149,7 +150,7 @@ fun LoginScreen(
                         email.isBlank() || password.isBlank() -> {
                             errorMessage = "Por favor, completa todos los campos"
                         }
-                        !android.util.Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() -> {
+                        !Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() -> {
                             errorMessage = "Ingresa un correo electrónico válido"
                         }
                         password.length < 6 -> {
