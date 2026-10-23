@@ -102,7 +102,7 @@ class DbHelper(context: Context) :
             """.trimIndent()
         )
 
-        // Aquí, en la parte C, insertaremos los datos precargados (cursos, quizzes, preguntas)
+        SeedData.insertar(db)
     }
 
     // Se ejecuta si se sube DB_VERSION. Como es una app académica, se borra y recrea todo
