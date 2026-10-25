@@ -31,12 +31,14 @@ import com.example.parcial2.ui.theme.Parcial2Theme
 @Composable
 fun CursosScreen(
     viewModel: CursosViewModel,
+    onCursoClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     CursosContent(
         uiState = uiState,
+        onCursoClick = onCursoClick,
         modifier = modifier
     )
 }
@@ -45,6 +47,7 @@ fun CursosScreen(
 @Composable
 fun CursosContent(
     uiState: CursosUiState,
+    onCursoClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     when {
@@ -80,7 +83,10 @@ fun CursosContent(
 
                 LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(uiState.cursos) { curso ->
-                        TarjetaCurso(curso = curso)
+                        TarjetaCurso(
+                            curso = curso,
+                            onClick = { onCursoClick(curso.id) }
+                        )
                     }
                 }
             }
@@ -89,8 +95,9 @@ fun CursosContent(
 }
 
 @Composable
-private fun TarjetaCurso(curso: Curso) {
+private fun TarjetaCurso(curso: Curso, onClick: () -> Unit) {
     Card(
+        onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
@@ -122,7 +129,8 @@ fun CursosContentPreview() {
                     Curso(1, "Fundamentos Jurídicos de la Función Policial", "Marco constitucional y procedimiento de detención.")
                 ),
                 cargando = false
-            )
+            ),
+            onCursoClick = {}
         )
     }
 }

@@ -31,6 +31,24 @@ class StudyDao(private val dbHelper: DbHelper) {
             lista
         }
     }
+    fun obtenerCurso(cursoId: Int): Curso? {
+        val cursor = dbHelper.readableDatabase.query(
+            Cursos.TABLA, null,
+            "${Cursos.ID} = ?", arrayOf(cursoId.toString()),
+            null, null, null
+        )
+        return cursor.use {
+            if (it.moveToFirst()) {
+                Curso(
+                    id = it.leerInt(Cursos.ID),
+                    nombre = it.leerTexto(Cursos.NOMBRE),
+                    descripcion = it.leerTexto(Cursos.DESCRIPCION)
+                )
+            } else {
+                null
+            }
+        }
+    }
 
     fun obtenerUnidades(cursoId: Int): List<Unidad> {
         val cursor = dbHelper.readableDatabase.query(
