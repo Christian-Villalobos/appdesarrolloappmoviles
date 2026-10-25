@@ -22,11 +22,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.parcial2.data.local.SessionManager
+import com.example.parcial2.data.repository.StudyRepository
 import com.example.parcial2.data.repository.UserRepository
 import com.example.parcial2.ui.components.AppBottomBar
 import com.example.parcial2.ui.components.AppTopBar
@@ -36,11 +39,12 @@ import com.example.parcial2.ui.screens.auth.LoginScreen
 import com.example.parcial2.ui.screens.auth.LoginViewModel
 import com.example.parcial2.ui.screens.auth.RegistroScreen
 import com.example.parcial2.ui.screens.auth.RegistroViewModel
+import com.example.parcial2.ui.screens.courses.CursoDetalleScreen
+import com.example.parcial2.ui.screens.courses.CursoDetalleViewModel
 import com.example.parcial2.ui.screens.courses.CursosScreen
+import com.example.parcial2.ui.screens.courses.CursosViewModel
 import com.example.parcial2.ui.screens.home.HomeScreen
 import com.example.parcial2.ui.screens.profile.PerfilScreen
-import com.example.parcial2.data.repository.StudyRepository
-import com.example.parcial2.ui.screens.courses.CursosViewModel
 
 // Botones de la barra inferior
 private val itemsBarra = listOf(
@@ -49,13 +53,17 @@ private val itemsBarra = listOf(
     ItemBarra(NavRoutes.Perfil.ruta, "Perfil", Icons.Default.Person)
 )
 
-// Pantallas que requieren sesión iniciada (las que llevan barras)
+// Pantallas con barra inferior (las tres secciones principales)
 private val rutasPrincipales = itemsBarra.map { it.ruta }
+
+// Pantallas que requieren sesión iniciada (llevan barra superior)
+private val rutasProtegidas = rutasPrincipales + NavRoutes.CursoDetalle.ruta
 
 private fun tituloDe(ruta: String?): String = when (ruta) {
     NavRoutes.Home.ruta -> "Inicio"
     NavRoutes.Cursos.ruta -> "Cursos"
     NavRoutes.Perfil.ruta -> "Perfil"
+    NavRoutes.CursoDetalle.ruta -> "Curso"
     else -> ""
 }
 
@@ -67,27 +75,28 @@ fun AppNavGraph(
     val navController = rememberNavController()
     val entradaActual by navController.currentBackStackEntryAsState()
     val rutaActual = entradaActual?.destination?.route
-    val mostrarBarras = rutaActual in rutasPrincipales
+    val mostrarBarraInferior = rutaActual in rutasPrincipales
+    val mostrarBarraSuperior = rutaActual in rutasProtegidas
 
     val usuario by SessionManager.usuarioActual.collectAsStateWithLifecycle()
     var mostrarDialogoCierre by rememberSaveable { mutableStateOf(false) }
 
     // Si no hay sesión y estamos en una pantalla que la requiere, volvemos al Login
     LaunchedEffect(usuario, rutaActual) {
-        if (usuario == null && rutaActual in rutasPrincipales) {
+        if (usuario == null && rutaActual in rutasProtegidas) {
             navController.navigate(NavRoutes.Login.ruta) {
                 popUpTo(0) { inclusive = true }
             }
         }
     }
 
-    // Íconos de la barra de estado: claros sobre verde oscuro, oscuros sobre fondo claro
+    // Íconos de la barra de estado y de navegación: claros sobre verde, oscuros sobre fondo claro
     val vista = LocalView.current
     SideEffect {
         val ventana = (vista.context as Activity).window
         val controlador = WindowCompat.getInsetsController(ventana, vista)
-        controlador.isAppearanceLightStatusBars = !mostrarBarras
-        controlador.isAppearanceLightNavigationBars = !mostrarBarras
+        controlador.isAppearanceLightStatusBars = !mostrarBarraSuperior
+        controlador.isAppearanceLightNavigationBars = !mostrarBarraInferior
     }
 
     // Después de autenticarse (login o registro) vamos al Home y borramos Login/Registro de la pila
@@ -97,17 +106,21 @@ fun AppNavGraph(
         }
     }
 
+    val volverAtras: () -> Unit = { navController.popBackStack() }
+
     Scaffold(
         topBar = {
-            if (mostrarBarras) {
+            if (mostrarBarraSuperior) {
                 AppTopBar(
                     titulo = tituloDe(rutaActual),
-                    onCerrarSesion = { mostrarDialogoCierre = true }
+                    onCerrarSesion = { mostrarDialogoCierre = true },
+                    // La flecha de volver solo aparece fuera de las secciones principales
+                    onVolver = if (mostrarBarraInferior) null else volverAtras
                 )
             }
         },
         bottomBar = {
-            if (mostrarBarras) {
+            if (mostrarBarraInferior) {
                 AppBottomBar(
                     items = itemsBarra,
                     rutaActual = rutaActual,
@@ -151,7 +164,7 @@ fun AppNavGraph(
                 RegistroScreen(
                     viewModel = viewModel,
                     onRegistroExitoso = irAlHome,
-                    onVolver = { navController.popBackStack() }
+                    onVolver = volverAtras
                 )
             }
 
@@ -165,7 +178,32 @@ fun AppNavGraph(
                         initializer { CursosViewModel(studyRepository) }
                     }
                 )
-                CursosScreen(viewModel = viewModel)
+                CursosScreen(
+                    viewModel = viewModel,
+                    onCursoClick = { cursoId ->
+                        navController.navigate(NavRoutes.CursoDetalle.crearRuta(cursoId))
+                    }
+                )
+            }
+
+            composable(
+                route = NavRoutes.CursoDetalle.ruta,
+                arguments = listOf(
+                    navArgument(NavRoutes.CursoDetalle.ARG_CURSO_ID) { type = NavType.IntType }
+                )
+            ) { entrada ->
+                // Leemos el id del curso que viene dentro de la ruta
+                val cursoId = entrada.arguments?.getInt(NavRoutes.CursoDetalle.ARG_CURSO_ID) ?: 0
+                val viewModel: CursoDetalleViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer { CursoDetalleViewModel(studyRepository, cursoId) }
+                    }
+                )
+                CursoDetalleScreen(
+                    viewModel = viewModel,
+                    // En la parte 5C esto abrirá la pantalla del quiz
+                    onQuizClick = { }
+                )
             }
 
             composable(NavRoutes.Perfil.ruta) {
