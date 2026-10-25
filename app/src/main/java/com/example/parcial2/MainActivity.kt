@@ -9,6 +9,8 @@ import com.example.parcial2.data.local.db.DbHelper
 import com.example.parcial2.data.repository.UserRepository
 import com.example.parcial2.ui.navigation.AppNavGraph
 import com.example.parcial2.ui.theme.Parcial2Theme
+import com.example.parcial2.data.local.dao.StudyDao
+import com.example.parcial2.data.repository.StudyRepository
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -18,10 +20,15 @@ class MainActivity : ComponentActivity() {
         // Armamos las capas de datos: Helper -> DAO -> Repositorio
         val dbHelper = DbHelper(applicationContext)
         val userRepository = UserRepository(UserDao(dbHelper))
+        val studyRepository = StudyRepository(StudyDao(dbHelper))
+
 
         setContent {
             Parcial2Theme {
-                AppNavGraph(userRepository = userRepository)
+                AppNavGraph(
+                    userRepository = userRepository,
+                    studyRepository = studyRepository
+                )
             }
         }
     }

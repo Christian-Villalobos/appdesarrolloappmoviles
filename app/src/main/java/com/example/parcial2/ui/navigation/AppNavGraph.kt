@@ -39,6 +39,8 @@ import com.example.parcial2.ui.screens.auth.RegistroViewModel
 import com.example.parcial2.ui.screens.courses.CursosScreen
 import com.example.parcial2.ui.screens.home.HomeScreen
 import com.example.parcial2.ui.screens.profile.PerfilScreen
+import com.example.parcial2.data.repository.StudyRepository
+import com.example.parcial2.ui.screens.courses.CursosViewModel
 
 // Botones de la barra inferior
 private val itemsBarra = listOf(
@@ -58,7 +60,10 @@ private fun tituloDe(ruta: String?): String = when (ruta) {
 }
 
 @Composable
-fun AppNavGraph(userRepository: UserRepository) {
+fun AppNavGraph(
+    userRepository: UserRepository,
+    studyRepository: StudyRepository
+) {
     val navController = rememberNavController()
     val entradaActual by navController.currentBackStackEntryAsState()
     val rutaActual = entradaActual?.destination?.route
@@ -155,7 +160,12 @@ fun AppNavGraph(userRepository: UserRepository) {
             }
 
             composable(NavRoutes.Cursos.ruta) {
-                CursosScreen()
+                val viewModel: CursosViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer { CursosViewModel(studyRepository) }
+                    }
+                )
+                CursosScreen(viewModel = viewModel)
             }
 
             composable(NavRoutes.Perfil.ruta) {
