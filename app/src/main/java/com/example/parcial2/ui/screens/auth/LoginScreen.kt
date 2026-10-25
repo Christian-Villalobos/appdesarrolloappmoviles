@@ -24,12 +24,14 @@ import com.example.parcial2.ui.components.BotonPrincipal
 import com.example.parcial2.ui.components.CampoPassword
 import com.example.parcial2.ui.components.CampoTexto
 import com.example.parcial2.ui.theme.Parcial2Theme
+import androidx.compose.material3.TextButton
 
 // Versión "conectada": obtiene el estado del ViewModel y se lo pasa a LoginContent
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel,
-    onLoginSuccess: () -> Unit
+    onLoginSuccess: () -> Unit,
+    onIrARegistro: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -37,7 +39,8 @@ fun LoginScreen(
         uiState = uiState,
         onEmailChange = viewModel::onEmailChange,
         onPasswordChange = viewModel::onPasswordChange,
-        onIngresar = { viewModel.iniciarSesion(onLoginSuccess) }
+        onIngresar = { viewModel.iniciarSesion(onLoginSuccess) },
+        onIrARegistro = onIrARegistro
     )
 }
 
@@ -47,7 +50,8 @@ fun LoginContent(
     uiState: LoginUiState,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
-    onIngresar: () -> Unit
+    onIngresar: () -> Unit,
+    onIrARegistro: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -110,6 +114,12 @@ fun LoginContent(
                 onClick = onIngresar,
                 cargando = uiState.cargando
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            TextButton(onClick = onIrARegistro) {
+                Text("¿No tienes cuenta? Regístrate")
+            }
         }
     }
 }
@@ -122,7 +132,8 @@ fun LoginContentPreview() {
             uiState = LoginUiState(error = "Correo o contraseña incorrectos"),
             onEmailChange = {},
             onPasswordChange = {},
-            onIngresar = {}
+            onIngresar = {},
+            onIrARegistro = {}
         )
     }
 }
