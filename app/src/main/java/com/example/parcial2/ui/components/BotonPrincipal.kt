@@ -18,11 +18,12 @@ fun BotonPrincipal(
     texto: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    cargando: Boolean = false
+    cargando: Boolean = false,
+    habilitado: Boolean = true
 ) {
     Button(
         onClick = onClick,
-        enabled = !cargando,
+        enabled = habilitado && !cargando,
         modifier = modifier
             .fillMaxWidth()
             .height(50.dp),
