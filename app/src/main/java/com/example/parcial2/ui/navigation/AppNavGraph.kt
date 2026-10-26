@@ -45,6 +45,8 @@ import com.example.parcial2.ui.screens.courses.CursosScreen
 import com.example.parcial2.ui.screens.courses.CursosViewModel
 import com.example.parcial2.ui.screens.home.HomeScreen
 import com.example.parcial2.ui.screens.profile.PerfilScreen
+import com.example.parcial2.ui.screens.quiz.QuizScreen
+import com.example.parcial2.ui.screens.quiz.QuizViewModel
 
 // Botones de la barra inferior
 private val itemsBarra = listOf(
@@ -57,13 +59,14 @@ private val itemsBarra = listOf(
 private val rutasPrincipales = itemsBarra.map { it.ruta }
 
 // Pantallas que requieren sesión iniciada (llevan barra superior)
-private val rutasProtegidas = rutasPrincipales + NavRoutes.CursoDetalle.ruta
+private val rutasProtegidas = rutasPrincipales + NavRoutes.CursoDetalle.ruta + NavRoutes.Quiz.ruta
 
 private fun tituloDe(ruta: String?): String = when (ruta) {
     NavRoutes.Home.ruta -> "Inicio"
     NavRoutes.Cursos.ruta -> "Cursos"
     NavRoutes.Perfil.ruta -> "Perfil"
     NavRoutes.CursoDetalle.ruta -> "Curso"
+    NavRoutes.Quiz.ruta -> "Quiz"
     else -> ""
 }
 
@@ -201,11 +204,28 @@ fun AppNavGraph(
                 )
                 CursoDetalleScreen(
                     viewModel = viewModel,
-                    // En la parte 5C esto abrirá la pantalla del quiz
-                    onQuizClick = { }
+                    onQuizClick = { quizId ->
+                        navController.navigate(NavRoutes.Quiz.crearRuta(quizId))
+                    }
                 )
             }
-
+            composable(
+                route = NavRoutes.Quiz.ruta,
+                arguments = listOf(
+                    navArgument(NavRoutes.Quiz.ARG_QUIZ_ID) { type = NavType.IntType }
+                )
+            ) { entrada ->
+                val quizId = entrada.arguments?.getInt(NavRoutes.Quiz.ARG_QUIZ_ID) ?: 0
+                val viewModel: QuizViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer { QuizViewModel(studyRepository, quizId) }
+                    }
+                )
+                QuizScreen(
+                    viewModel = viewModel,
+                    onVolver = volverAtras
+                )
+            }
             composable(NavRoutes.Perfil.ruta) {
                 PerfilScreen(onCerrarSesion = { mostrarDialogoCierre = true })
             }

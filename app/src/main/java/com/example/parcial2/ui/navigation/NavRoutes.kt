@@ -13,4 +13,9 @@ sealed class NavRoutes(val ruta: String) {
         const val ARG_CURSO_ID = "cursoId"
         fun crearRuta(cursoId: Int): String = "curso/$cursoId"
     }
+    // Esta ruta lleva el id del quiz
+    data object Quiz : NavRoutes("quiz/{quizId}") {
+        const val ARG_QUIZ_ID = "quizId"
+        fun crearRuta(quizId: Int): String = "quiz/$quizId"
+    }
 }

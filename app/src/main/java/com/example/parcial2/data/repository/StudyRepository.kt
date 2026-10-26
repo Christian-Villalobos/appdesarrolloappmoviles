@@ -6,6 +6,7 @@ import com.example.parcial2.domain.model.Pregunta
 import com.example.parcial2.domain.model.Quiz
 import com.example.parcial2.domain.model.Unidad
 import com.example.parcial2.domain.model.UnidadConQuizzes
+import com.example.parcial2.domain.model.ResultadoQuiz
 
 class StudyRepository(private val studyDao: StudyDao) {
 
@@ -27,4 +28,24 @@ class StudyRepository(private val studyDao: StudyDao) {
                 quizzes = studyDao.obtenerQuizzes(unidad.id)
             )
         }
+    fun obtenerQuiz(quizId: Int): Quiz? = studyDao.obtenerQuiz(quizId)
+
+    // Registra el intento con la fecha actual y devuelve el resultado completo
+    fun guardarResultado(
+        usuarioId: Int,
+        quizId: Int,
+        aciertos: Int,
+        totalPreguntas: Int
+    ): ResultadoQuiz {
+        val fecha = System.currentTimeMillis()
+        val id = studyDao.insertarResultado(usuarioId, quizId, aciertos, totalPreguntas, fecha)
+        return ResultadoQuiz(
+            id = id.toInt(),
+            usuarioId = usuarioId,
+            quizId = quizId,
+            aciertos = aciertos,
+            totalPreguntas = totalPreguntas,
+            fecha = fecha
+        )
+    }
 }

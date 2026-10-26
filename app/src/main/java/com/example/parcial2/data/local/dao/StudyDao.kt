@@ -10,6 +10,8 @@ import com.example.parcial2.domain.model.Curso
 import com.example.parcial2.domain.model.Pregunta
 import com.example.parcial2.domain.model.Quiz
 import com.example.parcial2.domain.model.Unidad
+import android.content.ContentValues
+import com.example.parcial2.data.local.db.DbContract.Resultados
 
 class StudyDao(private val dbHelper: DbHelper) {
 
@@ -120,6 +122,43 @@ class StudyDao(private val dbHelper: DbHelper) {
             }
             lista
         }
+    }
+    // Lee un solo quiz por su id (para mostrar su título)
+    fun obtenerQuiz(quizId: Int): Quiz? {
+        val cursor = dbHelper.readableDatabase.query(
+            Quizzes.TABLA, null,
+            "${Quizzes.ID} = ?", arrayOf(quizId.toString()),
+            null, null, null
+        )
+        return cursor.use {
+            if (it.moveToFirst()) {
+                Quiz(
+                    id = it.leerInt(Quizzes.ID),
+                    unidadId = it.leerInt(Quizzes.UNIDAD_ID),
+                    titulo = it.leerTexto(Quizzes.TITULO)
+                )
+            } else {
+                null
+            }
+        }
+    }
+
+    // Guarda el resultado de un intento. Devuelve el id de la fila, o -1 si falló.
+    fun insertarResultado(
+        usuarioId: Int,
+        quizId: Int,
+        aciertos: Int,
+        totalPreguntas: Int,
+        fecha: Long
+    ): Long {
+        val valores = ContentValues().apply {
+            put(Resultados.USUARIO_ID, usuarioId)
+            put(Resultados.QUIZ_ID, quizId)
+            put(Resultados.ACIERTOS, aciertos)
+            put(Resultados.TOTAL_PREGUNTAS, totalPreguntas)
+            put(Resultados.FECHA, fecha)
+        }
+        return dbHelper.writableDatabase.insert(Resultados.TABLA, null, valores)
     }
 }
 
