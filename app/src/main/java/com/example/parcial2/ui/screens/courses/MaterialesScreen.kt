@@ -2,6 +2,12 @@ package com.example.parcial2.ui.screens.courses
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,6 +54,7 @@ import com.example.parcial2.ui.theme.Parcial2Theme
 
 /**
  * Pantalla para ver, subir, descargar y eliminar material de estudio de una unidad.
+ * Incluye Animación 1 (animateItem en LazyColumn) y Animación 2 (AnimatedContent + animateColorAsState en botón).
  */
 @Composable
 fun MaterialesScreen(
@@ -65,16 +72,14 @@ fun MaterialesScreen(
     // Control para descarga
     var archivoADescargar by remember { mutableStateOf<Archivo?>(null) }
 
-    // 1. Selector SAF para SUBIR archivos (OpenDocument permite elegir cualquier tipo de archivo)
+    // Selector SAF para SUBIR archivos
     val launcherSubir = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
-        uri?.let {
-            viewModel.subirArchivo(context, it)
-        }
+        uri?.let { viewModel.subirArchivo(context, it) }
     }
 
-    // 2. Selector SAF para EXPORTAR / BAJAR archivo (CreateDocument sugiere nombre)
+    // Selector SAF para EXPORTAR / BAJAR archivo
     val launcherBajar = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("*/*")
     ) { uriDestino ->
@@ -94,45 +99,122 @@ fun MaterialesScreen(
         }
     }
 
+    MaterialesContent(
+        tituloUnidad = tituloUnidad,
+        uiState = uiState,
+        snackbarHostState = snackbarHostState,
+        onSubirClick = { launcherSubir.launch(arrayOf("*/*")) },
+        onDescargarClick = { archivo ->
+            archivoADescargar = archivo
+            launcherBajar.launch(archivo.nombre)
+        },
+        onBorrarClick = { archivo ->
+            archivoABorrar = archivo
+        },
+        modifier = modifier
+    )
+
+    // Diálogo de confirmación para borrar archivo
+    archivoABorrar?.let { archivo ->
+        DialogConfirmacion(
+            titulo = "Eliminar archivo",
+            mensaje = "¿Estás seguro de que deseas eliminar permanentemente '${archivo.nombre}'?",
+            textoConfirmar = "Eliminar",
+            onConfirmar = {
+                viewModel.borrarArchivo(archivo)
+                archivoABorrar = null
+            },
+            onCancelar = {
+                archivoABorrar = null
+            }
+        )
+    }
+}
+
+/**
+ * Función componible interna pura: se usa tanto en MaterialesScreen como en el Preview.
+ */
+@Composable
+fun MaterialesContent(
+    tituloUnidad: String,
+    uiState: MaterialesUiState,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    onSubirClick: () -> Unit,
+    onDescargarClick: (Archivo) -> Unit,
+    onBorrarClick: (Archivo) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Animación 2: El color del botón cambia suavemente si está procesando
+    val colorBoton by animateColorAsState(
+        targetValue = if (uiState.cargando) {
+            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.6f)
+        } else {
+            MaterialTheme.colorScheme.tertiary
+        },
+        animationSpec = tween(durationMillis = 300),
+        label = "colorBotonSubir"
+    )
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(snackbarHostState) },
         bottomBar = {
-            // Botón CTA dorado para subir archivo
+            // Botón CTA reactivo para subir archivo
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
             ) {
                 Button(
-                    onClick = {
-                        // Abrimos cualquier tipo de documento (PDF, imágenes, etc.)
-                        launcherSubir.launch(arrayOf("*/*"))
-                    },
+                    onClick = onSubirClick,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.tertiary,
+                        containerColor = colorBoton,
                         contentColor = MaterialTheme.colorScheme.onTertiary
                     ),
                     enabled = !uiState.cargando
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.UploadFile,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.size(8.dp))
-                        Text(
-                            text = if (uiState.cargando) "Procesando..." else "Subir archivo",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                    // Animación 2: Transición animada entre el texto normal y 'Subiendo...'
+                    AnimatedContent(
+                        targetState = uiState.cargando,
+                        transitionSpec = {
+                            fadeIn(animationSpec = tween(250)) togetherWith
+                                    fadeOut(animationSpec = tween(250))
+                        },
+                        label = "contenidoBotonSubir"
+                    ) { estaCargando ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            if (estaCargando) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = MaterialTheme.colorScheme.onTertiary,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text(
+                                    text = "Subiendo...",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.UploadFile,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text(
+                                    text = "Subir archivo",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -211,16 +293,17 @@ fun MaterialesScreen(
                         contentPadding = PaddingValues(bottom = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
+                        // Animación 1: Modifier.animateItem() anima la entrada, salida y reacomodo en la lista
                         items(uiState.archivos, key = { it.id }) { archivo ->
                             TarjetaArchivo(
                                 archivo = archivo,
-                                onDescargar = {
-                                    archivoADescargar = archivo
-                                    launcherBajar.launch(archivo.nombre)
-                                },
-                                onBorrar = {
-                                    archivoABorrar = archivo
-                                }
+                                onDescargar = { onDescargarClick(archivo) },
+                                onBorrar = { onBorrarClick(archivo) },
+                                modifier = Modifier.animateItem(
+                                    fadeInSpec = tween(durationMillis = 300),
+                                    fadeOutSpec = tween(durationMillis = 300),
+                                    placementSpec = tween(durationMillis = 300)
+                                )
                             )
                         }
                     }
@@ -228,96 +311,27 @@ fun MaterialesScreen(
             }
         }
     }
-
-    // Diálogo de confirmación para borrar archivo (reutilizando DialogConfirmacion)
-    archivoABorrar?.let { archivo ->
-        DialogConfirmacion(
-            titulo = "Eliminar archivo",
-            mensaje = "¿Estás seguro de que deseas eliminar permanentemente '${archivo.nombre}'?",
-            textoConfirmar = "Eliminar",
-            onConfirmar = {
-                viewModel.borrarArchivo(archivo)
-                archivoABorrar = null
-            },
-            onCancelar = {
-                archivoABorrar = null
-            }
-        )
-    }
 }
 
 // -------------------------------------------------------------
-// Preview sin ViewModel para Android Studio
+// Preview sin dependencias
 // -------------------------------------------------------------
-@Composable
-fun MaterialesContentPreview(
-    archivos: List<Archivo>,
-    cargando: Boolean = false
-) {
-    Scaffold(
-        bottomBar = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Button(
-                    onClick = {},
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.tertiary,
-                        contentColor = MaterialTheme.colorScheme.onTertiary
-                    )
-                ) {
-                    Text("Subir archivo")
-                }
-            }
-        }
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Material de Estudio",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = "Unidad 1: Marco constitucional",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(archivos) { arch ->
-                    TarjetaArchivo(
-                        archivo = arch,
-                        onDescargar = {},
-                        onBorrar = {}
-                    )
-                }
-            }
-        }
-    }
-}
-
 @Preview(showBackground = true)
 @Composable
 fun MaterialesScreenPreview() {
     Parcial2Theme {
-        MaterialesContentPreview(
-            archivos = listOf(
-                Archivo(1, 1, "Resumen_Constitucion_Art101.pdf", "/ruta/1", 1024 * 350, System.currentTimeMillis()),
-                Archivo(2, 1, "Esquema_Detencion_Flagrancia.png", "/ruta/2", 1024 * 1024 * 2, System.currentTimeMillis() - 86400000)
-            )
+        MaterialesContent(
+            tituloUnidad = "Unidad 1: Marco constitucional e institucional",
+            uiState = MaterialesUiState(
+                archivos = listOf(
+                    Archivo(1, 1, "Resumen_Constitucion_Art101.pdf", "/ruta/1", 1024 * 350, System.currentTimeMillis()),
+                    Archivo(2, 1, "Esquema_Detencion_Flagrancia.png", "/ruta/2", 1024 * 1024 * 2, System.currentTimeMillis() - 86400000)
+                ),
+                cargando = false
+            ),
+            onSubirClick = {},
+            onDescargarClick = {},
+            onBorrarClick = {}
         )
     }
 }
