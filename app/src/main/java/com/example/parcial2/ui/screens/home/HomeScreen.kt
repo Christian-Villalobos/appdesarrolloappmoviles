@@ -16,12 +16,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.parcial2.data.local.SessionManager
 
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
-    val usuario by SessionManager.usuarioActual.collectAsStateWithLifecycle()
-
+fun HomeScreen(
+    viewModel: HomeViewModel,
+    modifier: Modifier = Modifier
+) {
+    val usuario by viewModel.usuario.collectAsStateWithLifecycle()
     Column(
         modifier = modifier
             .fillMaxSize()
