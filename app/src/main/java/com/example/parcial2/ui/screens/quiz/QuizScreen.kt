@@ -1,5 +1,7 @@
 package com.example.parcial2.ui.screens.quiz
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -23,10 +25,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -322,6 +329,21 @@ private fun PantallaResultado(
         else -> "Sigue practicando. Revisa el material e inténtalo nuevamente."
     }
 
+    val colorResultado = if (resultado.porcentaje >= 60) VerdeExito else MaterialTheme.colorScheme.error
+
+    // Animación 4: animateFloatAsState para llenar fluidamente la barra de resultado
+    var animarInicio by remember { mutableFloatStateOf(0f) }
+    val progresoAnimado by animateFloatAsState(
+        targetValue = animarInicio,
+        animationSpec = tween(durationMillis = 400),
+        label = "progresoResultadoQuiz"
+    )
+
+    // Se dispara cuando la pantalla de resultado se monta
+    LaunchedEffect(resultado) {
+        animarInicio = (resultado.porcentaje / 100f).coerceIn(0f, 1f)
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -341,10 +363,23 @@ private fun PantallaResultado(
             text = "${resultado.porcentaje}%",
             style = MaterialTheme.typography.displayLarge,
             fontWeight = FontWeight.Bold,
-            color = if (resultado.porcentaje >= 60) VerdeExito else MaterialTheme.colorScheme.error
+            color = colorResultado
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Barra con progreso animado
+        LinearProgressIndicator(
+            progress = { progresoAnimado },
+            modifier = Modifier
+                .fillMaxWidth(0.7f)
+                .height(10.dp),
+            color = colorResultado,
+            trackColor = MaterialTheme.colorScheme.outlineVariant,
+            strokeCap = StrokeCap.Round
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = "Acertaste ${resultado.aciertos} de ${resultado.totalPreguntas} preguntas",
