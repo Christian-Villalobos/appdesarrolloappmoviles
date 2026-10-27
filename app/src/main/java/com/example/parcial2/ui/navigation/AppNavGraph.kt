@@ -47,6 +47,8 @@ import com.example.parcial2.ui.screens.home.HomeScreen
 import com.example.parcial2.ui.screens.profile.PerfilScreen
 import com.example.parcial2.ui.screens.quiz.QuizScreen
 import com.example.parcial2.ui.screens.quiz.QuizViewModel
+import com.example.parcial2.ui.screens.profile.PerfilViewModel
+import com.example.parcial2.ui.screens.home.HomeViewModel
 
 // Botones de la barra inferior
 private val itemsBarra = listOf(
@@ -172,7 +174,8 @@ fun AppNavGraph(
             }
 
             composable(NavRoutes.Home.ruta) {
-                HomeScreen()
+                val viewModel: HomeViewModel = viewModel()
+                HomeScreen(viewModel = viewModel)
             }
 
             composable(NavRoutes.Cursos.ruta) {
@@ -227,7 +230,15 @@ fun AppNavGraph(
                 )
             }
             composable(NavRoutes.Perfil.ruta) {
-                PerfilScreen(onCerrarSesion = { mostrarDialogoCierre = true })
+                val viewModel: PerfilViewModel = viewModel(
+                    factory = viewModelFactory {
+                        initializer { PerfilViewModel(studyRepository) }
+                    }
+                )
+                PerfilScreen(
+                    viewModel = viewModel,
+                    onCerrarSesion = { mostrarDialogoCierre = true }
+                )
             }
         }
     }

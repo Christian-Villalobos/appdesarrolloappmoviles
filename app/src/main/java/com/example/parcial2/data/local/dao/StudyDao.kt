@@ -12,6 +12,8 @@ import com.example.parcial2.domain.model.Quiz
 import com.example.parcial2.domain.model.Unidad
 import android.content.ContentValues
 import com.example.parcial2.data.local.db.DbContract.Resultados
+import com.example.parcial2.domain.model.HistorialItem
+import com.example.parcial2.domain.model.ResultadoQuiz
 
 class StudyDao(private val dbHelper: DbHelper) {
 
@@ -160,6 +162,43 @@ class StudyDao(private val dbHelper: DbHelper) {
         }
         return dbHelper.writableDatabase.insert(Resultados.TABLA, null, valores)
     }
+
+    // Resultados de un usuario, con el título de cada quiz, del más reciente al más antiguo
+    fun obtenerHistorial(usuarioId: Int): List<HistorialItem> {
+        val sql = """
+            SELECT r.${Resultados.ID}, r.${Resultados.USUARIO_ID}, r.${Resultados.QUIZ_ID},
+                   r.${Resultados.ACIERTOS}, r.${Resultados.TOTAL_PREGUNTAS}, r.${Resultados.FECHA},
+                   q.${Quizzes.TITULO} AS titulo_quiz
+            FROM ${Resultados.TABLA} r
+            INNER JOIN ${Quizzes.TABLA} q ON q.${Quizzes.ID} = r.${Resultados.QUIZ_ID}
+            WHERE r.${Resultados.USUARIO_ID} = ?
+            ORDER BY r.${Resultados.FECHA} DESC, r.${Resultados.ID} DESC
+        """.trimIndent()
+
+        val cursor = dbHelper.readableDatabase.rawQuery(sql, arrayOf(usuarioId.toString()))
+
+        return cursor.use {
+            val lista = mutableListOf<HistorialItem>()
+            while (it.moveToNext()) {
+                lista.add(
+                    HistorialItem(
+                        resultado = ResultadoQuiz(
+                            id = it.leerInt(Resultados.ID),
+                            usuarioId = it.leerInt(Resultados.USUARIO_ID),
+                            quizId = it.leerInt(Resultados.QUIZ_ID),
+                            aciertos = it.leerInt(Resultados.ACIERTOS),
+                            totalPreguntas = it.leerInt(Resultados.TOTAL_PREGUNTAS),
+                            fecha = it.getLong(it.getColumnIndexOrThrow(Resultados.FECHA))
+                        ),
+                        tituloQuiz = it.leerTexto("titulo_quiz")
+                    )
+                )
+            }
+            lista
+        }
+    }
+
+
 }
 
 // Atajos para no repetir "getColumnIndexOrThrow" en cada lectura

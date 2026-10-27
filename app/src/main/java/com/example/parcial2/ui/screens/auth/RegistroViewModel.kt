@@ -59,8 +59,8 @@ class RegistroViewModel(private val repository: UserRepository) : ViewModel() {
         val estado = _uiState.value
 
         // 1. Validamos cada campo por separado, para mostrar cada error en su lugar
-        val errorNombres = Validaciones.validarNombre(estado.nombres, "Los nombres")
-        val errorApellidos = Validaciones.validarNombre(estado.apellidos, "Los apellidos")
+        val errorNombres = Validaciones.validarNombre(estado.nombres, "Nombres")
+        val errorApellidos = Validaciones.validarNombre(estado.apellidos, "Apellidos")
         val errorEmail = Validaciones.validarEmail(estado.email)
         val errorPassword = Validaciones.validarPassword(estado.password)
         val errorConfirmacion = Validaciones.validarConfirmacion(estado.password, estado.confirmacion)

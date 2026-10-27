@@ -6,7 +6,7 @@ object Validaciones {
     private val REGEX_EMAIL = Regex("^[A-Za-z0-9._%+-]+@carabineros\\.cl$")
 
     fun validarNombre(valor: String, campo: String): String? =
-        if (valor.trim().length < 3) "$campo debe tener al menos 3 caracteres" else null
+        if (valor.trim().length < 3) "El campo $campo debe tener al menos 3 caracteres" else null
 
     fun validarEmail(email: String): String? {
         val limpio = email.trim().lowercase()

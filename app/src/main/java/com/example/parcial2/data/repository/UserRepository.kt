@@ -14,8 +14,8 @@ class UserRepository(private val userDao: UserDao) {
         confirmacion: String
     ): ResultadoAuth {
         // Se queda con el primer error que encuentre; si no hay ninguno, queda en null
-        val error = Validaciones.validarNombre(nombres, "Los nombres")
-            ?: Validaciones.validarNombre(apellidos, "Los apellidos")
+        val error = Validaciones.validarNombre(nombres, "Nombres")
+            ?: Validaciones.validarNombre(apellidos, "Apellidos")
             ?: Validaciones.validarEmail(email)
             ?: Validaciones.validarPassword(password)
             ?: Validaciones.validarConfirmacion(password, confirmacion)

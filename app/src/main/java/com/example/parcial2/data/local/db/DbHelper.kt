@@ -10,7 +10,7 @@ import com.example.parcial2.data.local.db.DbContract.Resultados
 import com.example.parcial2.data.local.db.DbContract.Unidades
 import com.example.parcial2.data.local.db.DbContract.Usuarios
 
-class DbHelper(context: Context) :
+class DbHelper private constructor(context: Context) :
     SQLiteOpenHelper(context, DbContract.DB_NAME, null, DbContract.DB_VERSION) {
 
     // Se ejecuta antes de crear o abrir la base: activamos las claves foráneas
@@ -114,5 +114,15 @@ class DbHelper(context: Context) :
         db.execSQL("DROP TABLE IF EXISTS ${Cursos.TABLA}")
         db.execSQL("DROP TABLE IF EXISTS ${Usuarios.TABLA}")
         onCreate(db)
+    }
+    companion object {
+        @Volatile
+        private var instancia: DbHelper? = null
+
+        // Devuelve siempre la misma instancia; la crea solo la primera vez
+        fun obtener(context: Context): DbHelper =
+            instancia ?: synchronized(this) {
+                instancia ?: DbHelper(context.applicationContext).also { instancia = it }
+            }
     }
 }
