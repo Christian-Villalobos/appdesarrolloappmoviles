@@ -18,7 +18,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         // Armamos las capas de datos: Helper -> DAO -> Repositorio
-        val dbHelper = DbHelper(applicationContext)
+        val dbHelper = DbHelper.obtener(applicationContext)
         val userRepository = UserRepository(UserDao(dbHelper))
         val studyRepository = StudyRepository(StudyDao(dbHelper))
 
