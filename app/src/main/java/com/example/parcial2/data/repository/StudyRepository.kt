@@ -7,6 +7,7 @@ import com.example.parcial2.domain.model.Quiz
 import com.example.parcial2.domain.model.Unidad
 import com.example.parcial2.domain.model.UnidadConQuizzes
 import com.example.parcial2.domain.model.ResultadoQuiz
+import com.example.parcial2.domain.model.HistorialItem
 
 class StudyRepository(private val studyDao: StudyDao) {
 
@@ -19,6 +20,8 @@ class StudyRepository(private val studyDao: StudyDao) {
     fun obtenerQuizzes(unidadId: Int): List<Quiz> = studyDao.obtenerQuizzes(unidadId)
 
     fun obtenerPreguntas(quizId: Int): List<Pregunta> = studyDao.obtenerPreguntas(quizId)
+
+    fun obtenerHistorial(usuarioId: Int): List<HistorialItem> = studyDao.obtenerHistorial(usuarioId)
 
     // Arma la jerarquía: cada unidad del curso, junto con sus quizzes
     fun obtenerUnidadesConQuizzes(cursoId: Int): List<UnidadConQuizzes> =
