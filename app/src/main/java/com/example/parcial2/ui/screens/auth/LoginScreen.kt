@@ -74,7 +74,7 @@ fun LoginContent(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Bienvenido a la aplicación",
+                text = "Bienvenido a la aplicacion de estudio autónomo",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
