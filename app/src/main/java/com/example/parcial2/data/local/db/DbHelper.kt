@@ -3,6 +3,7 @@ package com.example.parcial2.data.local.db
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import com.example.parcial2.data.local.db.DbContract.Archivos
 import com.example.parcial2.data.local.db.DbContract.Cursos
 import com.example.parcial2.data.local.db.DbContract.Preguntas
 import com.example.parcial2.data.local.db.DbContract.Quizzes
@@ -102,11 +103,28 @@ class DbHelper private constructor(context: Context) :
             """.trimIndent()
         )
 
+        // Tabla de materiales de estudio por unidad
+        db.execSQL(
+            """
+            CREATE TABLE ${Archivos.TABLA} (
+                ${Archivos.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
+                ${Archivos.UNIDAD_ID} INTEGER NOT NULL,
+                ${Archivos.NOMBRE} TEXT NOT NULL,
+                ${Archivos.RUTA_INTERNA} TEXT NOT NULL,
+                ${Archivos.TAMANO_BYTES} INTEGER NOT NULL,
+                ${Archivos.FECHA} INTEGER NOT NULL,
+                FOREIGN KEY (${Archivos.UNIDAD_ID})
+                    REFERENCES ${Unidades.TABLA}(${Unidades.ID}) ON DELETE CASCADE
+            )
+            """.trimIndent()
+        )
+
         SeedData.insertar(db)
     }
 
     // Se ejecuta si se sube DB_VERSION. Como es una app académica, se borra y recrea todo
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        db.execSQL("DROP TABLE IF EXISTS ${Archivos.TABLA}")
         db.execSQL("DROP TABLE IF EXISTS ${Resultados.TABLA}")
         db.execSQL("DROP TABLE IF EXISTS ${Preguntas.TABLA}")
         db.execSQL("DROP TABLE IF EXISTS ${Quizzes.TABLA}")
@@ -115,6 +133,7 @@ class DbHelper private constructor(context: Context) :
         db.execSQL("DROP TABLE IF EXISTS ${Usuarios.TABLA}")
         onCreate(db)
     }
+
     companion object {
         @Volatile
         private var instancia: DbHelper? = null
