@@ -29,6 +29,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.parcial2.data.local.SessionManager
+import com.example.parcial2.data.repository.ArchivoRepository
 import com.example.parcial2.data.repository.StudyRepository
 import com.example.parcial2.data.repository.UserRepository
 import com.example.parcial2.ui.components.AppBottomBar
@@ -43,12 +44,16 @@ import com.example.parcial2.ui.screens.courses.CursoDetalleScreen
 import com.example.parcial2.ui.screens.courses.CursoDetalleViewModel
 import com.example.parcial2.ui.screens.courses.CursosScreen
 import com.example.parcial2.ui.screens.courses.CursosViewModel
+import com.example.parcial2.ui.screens.courses.MaterialesScreen
+import com.example.parcial2.ui.screens.courses.MaterialesViewModel
 import com.example.parcial2.ui.screens.home.HomeScreen
+import com.example.parcial2.ui.screens.home.HomeViewModel
 import com.example.parcial2.ui.screens.profile.PerfilScreen
+import com.example.parcial2.ui.screens.profile.PerfilViewModel
 import com.example.parcial2.ui.screens.quiz.QuizScreen
 import com.example.parcial2.ui.screens.quiz.QuizViewModel
-import com.example.parcial2.ui.screens.profile.PerfilViewModel
-import com.example.parcial2.ui.screens.home.HomeViewModel
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 // Botones de la barra inferior
 private val itemsBarra = listOf(
@@ -61,21 +66,23 @@ private val itemsBarra = listOf(
 private val rutasPrincipales = itemsBarra.map { it.ruta }
 
 // Pantallas que requieren sesión iniciada (llevan barra superior)
-private val rutasProtegidas = rutasPrincipales + NavRoutes.CursoDetalle.ruta + NavRoutes.Quiz.ruta
+private val rutasProtegidas = rutasPrincipales + NavRoutes.CursoDetalle.ruta + NavRoutes.Quiz.ruta + NavRoutes.Materiales.ruta
 
-private fun tituloDe(ruta: String?): String = when (ruta) {
-    NavRoutes.Home.ruta -> "Inicio"
-    NavRoutes.Cursos.ruta -> "Cursos"
-    NavRoutes.Perfil.ruta -> "Perfil"
-    NavRoutes.CursoDetalle.ruta -> "Curso"
-    NavRoutes.Quiz.ruta -> "Quiz"
+private fun tituloDe(ruta: String?): String = when {
+    ruta == NavRoutes.Home.ruta -> "Inicio"
+    ruta == NavRoutes.Cursos.ruta -> "Cursos"
+    ruta == NavRoutes.Perfil.ruta -> "Perfil"
+    ruta == NavRoutes.CursoDetalle.ruta -> "Curso"
+    ruta == NavRoutes.Quiz.ruta -> "Quiz"
+    ruta?.startsWith("materiales/") == true -> "Material de Estudio"
     else -> ""
 }
 
 @Composable
 fun AppNavGraph(
     userRepository: UserRepository,
-    studyRepository: StudyRepository
+    studyRepository: StudyRepository,
+    archivoRepository: ArchivoRepository
 ) {
     val navController = rememberNavController()
     val entradaActual by navController.currentBackStackEntryAsState()
@@ -139,13 +146,13 @@ fun AppNavGraph(
                 )
             }
         }
-    ) { paddingInterno ->
+    ) { relleno ->
         NavHost(
             navController = navController,
             startDestination = NavRoutes.Login.ruta,
             modifier = Modifier
-                .padding(paddingInterno)
-                .consumeWindowInsets(paddingInterno)
+                .padding(relleno)
+                .consumeWindowInsets(relleno)
         ) {
             composable(NavRoutes.Login.ruta) {
                 val viewModel: LoginViewModel = viewModel(
@@ -175,7 +182,9 @@ fun AppNavGraph(
 
             composable(NavRoutes.Home.ruta) {
                 val viewModel: HomeViewModel = viewModel()
-                HomeScreen(viewModel = viewModel)
+                HomeScreen(
+                    viewModel = viewModel
+                )
             }
 
             composable(NavRoutes.Cursos.ruta) {
@@ -198,7 +207,6 @@ fun AppNavGraph(
                     navArgument(NavRoutes.CursoDetalle.ARG_CURSO_ID) { type = NavType.IntType }
                 )
             ) { entrada ->
-                // Leemos el id del curso que viene dentro de la ruta
                 val cursoId = entrada.arguments?.getInt(NavRoutes.CursoDetalle.ARG_CURSO_ID) ?: 0
                 val viewModel: CursoDetalleViewModel = viewModel(
                     factory = viewModelFactory {
@@ -209,9 +217,44 @@ fun AppNavGraph(
                     viewModel = viewModel,
                     onQuizClick = { quizId ->
                         navController.navigate(NavRoutes.Quiz.crearRuta(quizId))
+                    },
+                    onMaterialesClick = { unidadId, tituloUnidad ->
+                        navController.navigate(NavRoutes.Materiales.crearRuta(unidadId, tituloUnidad))
                     }
                 )
             }
+
+            composable(
+                route = NavRoutes.Materiales.ruta,
+                arguments = listOf(
+                    navArgument(NavRoutes.Materiales.ARG_UNIDAD_ID) { type = NavType.IntType },
+                    navArgument(NavRoutes.Materiales.ARG_TITULO) {
+                        type = NavType.StringType
+                        defaultValue = ""
+                    }
+                )
+            ) { entrada ->
+                val unidadId = entrada.arguments?.getInt(NavRoutes.Materiales.ARG_UNIDAD_ID) ?: 0
+                val tituloCodificado = entrada.arguments?.getString(NavRoutes.Materiales.ARG_TITULO).orEmpty()
+                val tituloUnidad = try {
+                    URLDecoder.decode(tituloCodificado, StandardCharsets.UTF_8.toString())
+                } catch (_: Exception) {
+                    tituloCodificado
+                }
+
+                val viewModel: MaterialesViewModel = viewModel(
+                    key = "MaterialesViewModel_$unidadId",
+                    factory = viewModelFactory {
+                        initializer { MaterialesViewModel(unidadId, archivoRepository) }
+                    }
+                )
+
+                MaterialesScreen(
+                    tituloUnidad = tituloUnidad,
+                    viewModel = viewModel
+                )
+            }
+
             composable(
                 route = NavRoutes.Quiz.ruta,
                 arguments = listOf(
@@ -229,6 +272,7 @@ fun AppNavGraph(
                     onVolver = volverAtras
                 )
             }
+
             composable(NavRoutes.Perfil.ruta) {
                 val viewModel: PerfilViewModel = viewModel(
                     factory = viewModelFactory {

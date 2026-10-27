@@ -1,6 +1,9 @@
 package com.example.parcial2.ui.navigation
 
-// Lista cerrada de las pantallas de la app. En la parte 5C se agregará la del quiz.
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
+
+// Lista cerrada de las pantallas de la app.
 sealed class NavRoutes(val ruta: String) {
     data object Login : NavRoutes("login")
     data object Registro : NavRoutes("registro")
@@ -13,9 +16,20 @@ sealed class NavRoutes(val ruta: String) {
         const val ARG_CURSO_ID = "cursoId"
         fun crearRuta(cursoId: Int): String = "curso/$cursoId"
     }
+
     // Esta ruta lleva el id del quiz
     data object Quiz : NavRoutes("quiz/{quizId}") {
         const val ARG_QUIZ_ID = "quizId"
         fun crearRuta(quizId: Int): String = "quiz/$quizId"
+    }
+
+    // Ruta para el material de estudio de una unidad
+    data object Materiales : NavRoutes("materiales/{unidadId}?titulo={titulo}") {
+        const val ARG_UNIDAD_ID = "unidadId"
+        const val ARG_TITULO = "titulo"
+        fun crearRuta(unidadId: Int, titulo: String): String {
+            val tituloCodificado = URLEncoder.encode(titulo, StandardCharsets.UTF_8.toString())
+            return "materiales/$unidadId?titulo=$tituloCodificado"
+        }
     }
 }

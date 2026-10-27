@@ -11,19 +11,22 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -41,13 +44,15 @@ import com.example.parcial2.ui.theme.Parcial2Theme
 fun CursoDetalleScreen(
     viewModel: CursoDetalleViewModel,
     onQuizClick: (Int) -> Unit,
+    onMaterialesClick: (unidadId: Int, tituloUnidad: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val uiState = viewModel.uiState.collectAsStateWithLifecycle().value
 
     CursoDetalleContent(
         uiState = uiState,
         onQuizClick = onQuizClick,
+        onMaterialesClick = onMaterialesClick,
         modifier = modifier
     )
 }
@@ -57,6 +62,7 @@ fun CursoDetalleScreen(
 fun CursoDetalleContent(
     uiState: CursoDetalleUiState,
     onQuizClick: (Int) -> Unit,
+    onMaterialesClick: (unidadId: Int, tituloUnidad: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (uiState.cargando) {
@@ -97,17 +103,41 @@ fun CursoDetalleContent(
                 }
             }
 
-            // Por cada unidad: su título y, debajo, sus quizzes
+            // Por cada unidad: su título, botón de material y sus quizzes
             uiState.unidades.forEach { grupo ->
                 item {
-                    Column(modifier = Modifier.padding(top = 12.dp)) {
-                        Text(
-                            text = grupo.unidad.nombre,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
+                    Column(modifier = Modifier.padding(top = 16.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = grupo.unidad.nombre,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // Botón para acceder al material de estudio de la unidad
+                        OutlinedButton(
+                            onClick = { onMaterialesClick(grupo.unidad.id, grupo.unidad.nombre) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Description,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.size(8.dp))
+                            Text("Material de estudio (PDFs y archivos)")
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
                         HorizontalDivider()
                     }
                 }
@@ -163,7 +193,8 @@ fun CursoDetalleContentPreview() {
                 ),
                 cargando = false
             ),
-            onQuizClick = {}
+            onQuizClick = {},
+            onMaterialesClick = { _, _ -> }
         )
     }
 }
