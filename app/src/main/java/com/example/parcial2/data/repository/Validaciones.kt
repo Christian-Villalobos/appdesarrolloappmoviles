@@ -24,6 +24,9 @@ object Validaciones {
         else -> null
     }
 
-    fun validarConfirmacion(password: String, confirmacion: String): String? =
-        if (password != confirmacion) "Las contraseñas no coinciden" else null
+    fun validarConfirmacion(password: String, confirmacion: String): String? = when {
+        confirmacion.isEmpty() -> "Confirma tu contraseña"
+        password != confirmacion -> "Las contraseñas no coinciden"
+        else -> null
+    }
 }
