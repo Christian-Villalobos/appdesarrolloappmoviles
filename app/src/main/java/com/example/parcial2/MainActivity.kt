@@ -4,7 +4,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.parcial2.data.local.dao.UserDao
 import com.example.parcial2.data.local.db.DbHelper
 import com.example.parcial2.data.repository.UserRepository
 import com.example.parcial2.ui.navigation.AppNavGraph
@@ -19,7 +18,7 @@ class MainActivity : ComponentActivity() {
 
         // Armamos las capas de datos: Helper -> DAO -> Repositorio
         val dbHelper = DbHelper.obtener(applicationContext)
-        val userRepository = UserRepository(UserDao(dbHelper))
+        val userRepository = UserRepository()
         val studyRepository = StudyRepository(StudyDao(dbHelper))
 
 

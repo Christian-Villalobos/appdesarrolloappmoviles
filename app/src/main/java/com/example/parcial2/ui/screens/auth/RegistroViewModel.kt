@@ -6,13 +6,11 @@ import com.example.parcial2.data.local.SessionManager
 import com.example.parcial2.data.repository.ResultadoAuth
 import com.example.parcial2.data.repository.UserRepository
 import com.example.parcial2.data.repository.Validaciones
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 data class RegistroUiState(
     val nombres: String = "",
@@ -86,19 +84,17 @@ class RegistroViewModel(private val repository: UserRepository) : ViewModel() {
         _uiState.update { it.copy(cargando = true, errorGeneral = null) }
 
         viewModelScope.launch {
-            val resultado = withContext(Dispatchers.IO) {
-                repository.registrar(
-                    nombres = estado.nombres,
-                    apellidos = estado.apellidos,
-                    email = estado.email,
-                    password = estado.password,
-                    confirmacion = estado.confirmacion
-                )
-            }
+            val resultado = repository.registrar(
+                nombres = estado.nombres,
+                apellidos = estado.apellidos,
+                email = estado.email,
+                password = estado.password,
+                confirmacion = estado.confirmacion
+            )
 
             when (resultado) {
                 is ResultadoAuth.Exito -> {
-                    SessionManager.iniciarSesion(resultado.usuario)
+                    SessionManager.iniciarSesion(resultado.usuario, resultado.token)
                     _uiState.update { it.copy(cargando = false) }
                     onExito()
                 }
