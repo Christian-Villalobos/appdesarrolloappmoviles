@@ -6,13 +6,11 @@ import com.example.parcial2.data.local.SessionManager
 import com.example.parcial2.data.repository.StudyRepository
 import com.example.parcial2.domain.model.Pregunta
 import com.example.parcial2.domain.model.ResultadoQuiz
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 data class QuizUiState(
     val titulo: String = "",
@@ -22,7 +20,8 @@ data class QuizUiState(
     val respondida: Boolean = false,
     val aciertos: Int = 0,
     val resultado: ResultadoQuiz? = null,
-    val cargando: Boolean = true
+    val cargando: Boolean = true,
+    val error: String? = null
 ) {
     // Propiedades calculadas: se obtienen a partir de los datos de arriba
     val preguntaActual: Pregunta?
@@ -47,15 +46,24 @@ class QuizViewModel(
         cargar()
     }
 
-    private fun cargar() {
+    fun cargar() {
+        _uiState.update { it.copy(cargando = true, error = null) }
         viewModelScope.launch {
-            val (quiz, preguntas) = withContext(Dispatchers.IO) {
-                Pair(repository.obtenerQuiz(quizId), repository.obtenerPreguntas(quizId))
-            }
-            _uiState.update {
-                it.copy(titulo = quiz?.titulo.orEmpty(), preguntas = preguntas, cargando = false)
-            }
+            repository.obtenerQuizConPreguntas(quizId).fold(
+                onSuccess = { (quiz, preguntas) ->
+                    _uiState.update {
+                        it.copy(titulo = quiz.titulo, preguntas = preguntas, cargando = false, error = null)
+                    }
+                },
+                onFailure = { e ->
+                    _uiState.update { it.copy(cargando = false, error = e.message) }
+                }
+            )
         }
+    }
+
+    fun reintentarAccion() {
+        if (_uiState.value.preguntas.isEmpty()) cargar() else finalizar()
     }
 
     // El usuario toca una alternativa (solo si todavía no respondió)
@@ -103,16 +111,22 @@ class QuizViewModel(
         resultadoGuardado = true
 
         val estado = _uiState.value
+        _uiState.update { it.copy(cargando = true, error = null) }
         viewModelScope.launch {
-            val resultado = withContext(Dispatchers.IO) {
-                repository.guardarResultado(
-                    usuarioId = usuarioId,
-                    quizId = quizId,
-                    aciertos = estado.aciertos,
-                    totalPreguntas = estado.preguntas.size
-                )
-            }
-            _uiState.update { it.copy(resultado = resultado) }
+            repository.guardarResultado(
+                usuarioId = usuarioId,
+                quizId = quizId,
+                aciertos = estado.aciertos,
+                totalPreguntas = estado.preguntas.size
+            ).fold(
+                onSuccess = { resultado ->
+                    _uiState.update { it.copy(cargando = false, resultado = resultado) }
+                },
+                onFailure = { e ->
+                    resultadoGuardado = false
+                    _uiState.update { it.copy(cargando = false, error = e.message) }
+                }
+            )
         }
     }
 
@@ -125,7 +139,8 @@ class QuizViewModel(
                 seleccion = null,
                 respondida = false,
                 aciertos = 0,
-                resultado = null
+                resultado = null,
+                error = null
             )
         }
     }

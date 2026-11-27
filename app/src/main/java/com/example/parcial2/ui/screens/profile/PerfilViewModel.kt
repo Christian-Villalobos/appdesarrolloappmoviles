@@ -5,17 +5,16 @@ import androidx.lifecycle.viewModelScope
 import com.example.parcial2.data.local.SessionManager
 import com.example.parcial2.data.repository.StudyRepository
 import com.example.parcial2.domain.model.HistorialItem
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 data class PerfilUiState(
     val historial: List<HistorialItem> = emptyList(),
-    val cargando: Boolean = true
+    val cargando: Boolean = true,
+    val error: String? = null
 ) {
     // Estadísticas calculadas a partir del historial
     val totalIntentos: Int
@@ -34,12 +33,17 @@ class PerfilViewModel(private val repository: StudyRepository) : ViewModel() {
     // Es pública porque la pantalla la llama cada vez que se abre el Perfil
     fun cargar() {
         val usuarioId = SessionManager.usuarioActual.value?.id ?: return
+        _uiState.update { it.copy(cargando = true, error = null) }
 
         viewModelScope.launch {
-            val historial = withContext(Dispatchers.IO) {
-                repository.obtenerHistorial(usuarioId)
-            }
-            _uiState.update { it.copy(historial = historial, cargando = false) }
+            repository.obtenerHistorial(usuarioId).fold(
+                onSuccess = { historial ->
+                    _uiState.update { it.copy(historial = historial, cargando = false, error = null) }
+                },
+                onFailure = { e ->
+                    _uiState.update { it.copy(cargando = false, error = e.message) }
+                }
+            )
         }
     }
 }

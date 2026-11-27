@@ -34,6 +34,7 @@ import com.example.parcial2.domain.model.Curso
 import com.example.parcial2.domain.model.Quiz
 import com.example.parcial2.domain.model.Unidad
 import com.example.parcial2.domain.model.UnidadConQuizzes
+import com.example.parcial2.ui.components.VistaError
 import com.example.parcial2.ui.theme.Parcial2Theme
 
 // Versión "conectada" al ViewModel
@@ -48,6 +49,7 @@ fun CursoDetalleScreen(
     CursoDetalleContent(
         uiState = uiState,
         onQuizClick = onQuizClick,
+        onReintentar = viewModel::cargar,
         modifier = modifier
     )
 }
@@ -57,12 +59,19 @@ fun CursoDetalleScreen(
 fun CursoDetalleContent(
     uiState: CursoDetalleUiState,
     onQuizClick: (Int) -> Unit,
+    onReintentar: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     if (uiState.cargando) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()
         }
+    } else if (uiState.error != null) {
+        VistaError(
+            mensaje = uiState.error,
+            onReintentar = onReintentar,
+            modifier = modifier
+        )
     } else {
         LazyColumn(
             modifier = modifier.fillMaxSize(),

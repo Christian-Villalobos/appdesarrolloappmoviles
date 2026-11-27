@@ -5,18 +5,17 @@ import androidx.lifecycle.viewModelScope
 import com.example.parcial2.data.repository.StudyRepository
 import com.example.parcial2.domain.model.Curso
 import com.example.parcial2.domain.model.UnidadConQuizzes
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 data class CursoDetalleUiState(
     val curso: Curso? = null,
     val unidades: List<UnidadConQuizzes> = emptyList(),
-    val cargando: Boolean = true
+    val cargando: Boolean = true,
+    val error: String? = null
 )
 
 class CursoDetalleViewModel(
@@ -31,17 +30,19 @@ class CursoDetalleViewModel(
         cargar()
     }
 
-    private fun cargar() {
+    fun cargar() {
+        _uiState.update { it.copy(cargando = true, error = null) }
         viewModelScope.launch {
-            val (curso, unidades) = withContext(Dispatchers.IO) {
-                Pair(
-                    repository.obtenerCurso(cursoId),
-                    repository.obtenerUnidadesConQuizzes(cursoId)
-                )
-            }
-            _uiState.update {
-                it.copy(curso = curso, unidades = unidades, cargando = false)
-            }
+            repository.obtenerDetalleCurso(cursoId).fold(
+                onSuccess = { (curso, unidades) ->
+                    _uiState.update {
+                        it.copy(curso = curso, unidades = unidades, cargando = false, error = null)
+                    }
+                },
+                onFailure = { e ->
+                    _uiState.update { it.copy(cargando = false, error = e.message) }
+                }
+            )
         }
     }
 }

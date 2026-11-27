@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.parcial2.domain.model.Pregunta
 import com.example.parcial2.domain.model.ResultadoQuiz
 import com.example.parcial2.ui.components.BotonPrincipal
+import com.example.parcial2.ui.components.VistaError
 import com.example.parcial2.ui.theme.Parcial2Theme
 import com.example.parcial2.ui.theme.VerdeExito
 
@@ -57,6 +58,7 @@ fun QuizScreen(
         onSiguiente = viewModel::siguiente,
         onReintentar = viewModel::reiniciar,
         onVolver = onVolver,
+        onReintentarCarga = viewModel::reintentarAccion,
         modifier = modifier
     )
 }
@@ -70,6 +72,7 @@ fun QuizContent(
     onSiguiente: () -> Unit,
     onReintentar: () -> Unit,
     onVolver: () -> Unit,
+    onReintentarCarga: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val pregunta = uiState.preguntaActual
@@ -79,6 +82,14 @@ fun QuizContent(
             Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
+        }
+
+        uiState.error != null -> {
+            VistaError(
+                mensaje = uiState.error,
+                onReintentar = onReintentarCarga,
+                modifier = modifier
+            )
         }
 
         uiState.resultado != null -> {
