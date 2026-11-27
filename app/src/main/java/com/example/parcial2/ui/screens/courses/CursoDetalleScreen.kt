@@ -11,10 +11,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -22,6 +25,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -42,6 +46,7 @@ import com.example.parcial2.ui.theme.Parcial2Theme
 fun CursoDetalleScreen(
     viewModel: CursoDetalleViewModel,
     onQuizClick: (Int) -> Unit,
+    onMaterialesClick: (Int, String) -> Unit,   // (id de la unidad, nombre de la unidad)
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -49,6 +54,7 @@ fun CursoDetalleScreen(
     CursoDetalleContent(
         uiState = uiState,
         onQuizClick = onQuizClick,
+        onMaterialesClick = onMaterialesClick,
         onReintentar = viewModel::cargar,
         modifier = modifier
     )
@@ -59,6 +65,7 @@ fun CursoDetalleScreen(
 fun CursoDetalleContent(
     uiState: CursoDetalleUiState,
     onQuizClick: (Int) -> Unit,
+    onMaterialesClick: (Int, String) -> Unit,
     onReintentar: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -106,17 +113,30 @@ fun CursoDetalleContent(
                 }
             }
 
-            // Por cada unidad: su título y, debajo, sus quizzes
+            // Por cada unidad: su título (con botón de Material) y, debajo, sus quizzes
             uiState.unidades.forEach { grupo ->
                 item {
                     Column(modifier = Modifier.padding(top = 12.dp)) {
-                        Text(
-                            text = grupo.unidad.nombre,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = grupo.unidad.nombre,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.weight(1f)
+                            )
+                            TextButton(
+                                onClick = { onMaterialesClick(grupo.unidad.id, grupo.unidad.nombre) }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.FolderOpen,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Material")
+                            }
+                        }
                         HorizontalDivider()
                     }
                 }
@@ -172,7 +192,8 @@ fun CursoDetalleContentPreview() {
                 ),
                 cargando = false
             ),
-            onQuizClick = {}
+            onQuizClick = {},
+            onMaterialesClick = { _, _ -> }
         )
     }
 }

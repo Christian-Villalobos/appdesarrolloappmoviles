@@ -4,6 +4,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import com.example.parcial2.data.local.SessionManager
 import com.example.parcial2.data.local.dao.ArchivoDao
 import com.example.parcial2.data.local.dao.StudyDao
 import com.example.parcial2.data.local.db.DbHelper
@@ -18,12 +19,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Restauramos la sesión guardada ANTES de dibujar la interfaz
+        SessionManager.inicializar(applicationContext)
+
         // Armamos las capas de datos: Helper -> DAO -> Repositorio
         val dbHelper = DbHelper.obtener(applicationContext)
         val userRepository = UserRepository()
         val studyRepository = StudyRepository(StudyDao(dbHelper))
-
-        // Materiales: el repositorio necesita el Context para copiar archivos en filesDir
         val archivoRepository = ArchivoRepository(applicationContext, ArchivoDao(dbHelper))
 
         setContent {
