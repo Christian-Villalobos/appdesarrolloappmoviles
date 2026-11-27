@@ -1,62 +1,142 @@
 # Quiz Carabineros
 
-Aplicación móvil Android para estudiar con cuestionarios de contenido jurídico. Funciona 100 % sin conexión: los datos viven en una base de datos SQLite dentro del teléfono.
+Aplicación móvil Android desarrollada en Kotlin con Jetpack Compose para el estudio y preparación de contenido jurídico institucional mediante cuestionarios, soporte híbrido (remoto con microservicio Spring Boot y respaldo local con SQLite), gestión de materiales de estudio y consulta de feriados legales.
 
-## Funcionalidades
+---
 
-- **Registro e inicio de sesión** con validaciones (correo institucional `@carabineros.cl`, contraseña segura).
-- **Cursos → Unidades → Quizzes → Preguntas**, con datos precargados.
-- **Quizzes** con alternativas A, B, C y D, porcentaje de aciertos y retroalimentación con justificación legal.
-- **Perfil** con historial de resultados y estadísticas.
-- **Cierre de sesión** con confirmación.
+## Funcionalidades Principales
 
-## Tecnologías
+- **Autenticación y Registro**:
+  - Validación de correo institucional con dominio exclusivo `@carabineros.cl`.
+  - Verificación de contraseña robusta (longitud mínima, mayúscula y número).
+  - Manejo de sesión persistente mediante `SessionManager` (`SharedPreferences`) y autenticación basada en tokens JWT.
+- **Cursos, Unidades y Quizzes**:
+  - Navegación estructurada: Cursos → Unidades → Quizzes.
+  - Cuestionarios interactivos de selección múltiple (alternativas A, B, C y D).
+  - Retroalimentación inmediata tras cada respuesta con justificación legal asociada.
+  - Resumen al finalizar el quiz con porcentaje de aciertos y guardado de resultados.
+- **Materiales de Estudio**:
+  - Consulta, subida local y descarga de archivos de apoyo por unidad formativa (con límite de hasta 10 MB vía Storage Access Framework y persistencia interna).
+- **Inicio (Home)**:
+  - Saludo al usuario en sesión y consulta de los próximos feriados nacionales en Chile consumiendo la API externa de Nager.Date.
+- **Perfil y Estadísticas**:
+  - Visualización del historial de intentos realizados y cálculo de promedio general de rendimiento.
+  - Cierre de sesión seguro con diálogo de confirmación.
 
-- Kotlin
-- Jetpack Compose con Material 3
-- Arquitectura MVVM con `StateFlow` y corrutinas
-- SQLite nativo (`SQLiteOpenHelper`) con DAOs
-- Navigation Compose
+---
 
-## Arquitectura
+## Arquitectura y Tecnologías
 
-```
-Pantalla (Compose) → ViewModel → Repositorio → DAO → SQLite
-```
+- **Lenguaje**: Kotlin
+- **UI Framework**: Jetpack Compose con Material Design 3
+- **Patrón de Arquitectura**: MVVM (Model-View-ViewModel) con `StateFlow`, corrutinas (`kotlinx.coroutines`) y ciclo de vida (`androidx.lifecycle`).
+- **Navegación**: Jetpack Navigation Compose con definición tipada/cerrada en `NavRoutes`.
+- **Capa de Red**:
+  - Retrofit 2 + Gson Converter + OkHttp Logging Interceptor.
+  - Interceptor OkHttp que inyecta automáticamente el token Bearer en los endpoints del microservicio backend.
+- **Persistencia Local**:
+  - SQLite nativo mediante `SQLiteOpenHelper` (`DbHelper`, `DbContract`, `SeedData`).
+  - Patrón DAO (`UserDao`, `StudyDao`, `ArchivoDao`).
+- **Estrategia Híbrida / Respaldo**:
+  - Los repositorios intentan sincronizar y consumir datos desde el microservicio backend REST, recurriendo a la base de datos local SQLite en caso de fallos de red.
 
-## Estructura de paquetes
+---
 
-```
+## Estructura de Paquetes (`app/src/main/java/com/example/parcial2`)
+
+```text
 com.example.parcial2
+├── MainActivity.kt
 ├── data
-│   ├── local            SessionManager (sesión en memoria)
-│   │   ├── db           DbHelper, DbContract, SeedData
-│   │   └── dao          UserDao, StudyDao
-│   └── repository       UserRepository, StudyRepository, Validaciones
-├── domain.model         Modelos inmutables (Usuario, Curso, Quiz, Pregunta, ...)
+│   ├── local
+│   │   ├── SessionManager.kt             // Gestión de sesión y token en SharedPreferences
+│   │   ├── dao                           // Interfaces y queries SQLite nativas
+│   │   │   ├── ArchivoDao.kt
+│   │   │   ├── StudyDao.kt
+│   │   │   └── UserDao.kt
+│   │   └── db                            // Contrato, helper y precarga de SQLite
+│   │       ├── DbContract.kt
+│   │       ├── DbHelper.kt
+│   │       └── SeedData.kt
+│   ├── remote
+│   │   ├── BackendApiService.kt          // Contrato REST del backend propio (Spring Boot)
+│   │   ├── FeriadosApiService.kt         // API REST externa (date.nager.at)
+│   │   ├── RetrofitClient.kt             // Cliente Retrofit con interceptor Bearer Token
+│   │   └── dto                           // Data Transfer Objects para requests y responses
+│   │       ├── BackendDtos.kt
+│   │       └── FeriadoDto.kt
+│   └── repository                        // Coordinación entre API remota, DAOs locales y validaciones
+│       ├── ArchivoRepository.kt
+│       ├── ResultadoAuth.kt
+│       ├── StudyRepository.kt
+│       ├── UserRepository.kt
+│       └── Validaciones.kt
+├── domain
+│   └── model                             // Modelos de dominio
+│       ├── Archivo.kt
+│       ├── Curso.kt
+│       ├── HistorialItem.kt
+│       ├── Pregunta.kt
+│       ├── Quiz.kt
+│       ├── ResultadoQuiz.kt
+│       ├── Unidad.kt
+│       ├── UnidadConQuizzes.kt
+│       └── Usuario.kt
 └── ui
-    ├── theme            Paleta institucional
-    ├── components       Barras, diálogos y campos reutilizables
-    ├── navigation       NavRoutes y AppNavGraph
-    └── screens          auth, home, courses, quiz, profile
+    ├── components                        // Componentes Compose comunes (TopBar, BottomBar, Campos, etc.)
+    │   ├── AppBottomBar.kt
+    │   ├── AppTopBar.kt
+    │   ├── BotonPrincipal.kt
+    │   ├── Campos.kt
+    │   ├── DialogConfirmacion.kt
+    │   ├── TarjetaArchivo.kt
+    │   └── VistaError.kt
+    ├── navigation                        // Grafo y rutas de navegación
+    │   ├── AppNavGraph.kt
+    │   └── NavRoutes.kt
+    ├── screens                           // Pantallas y ViewModels por módulo
+    │   ├── auth                          // Login y Registro
+    │   ├── courses                       // Lista de Cursos, Detalle y Materiales
+    │   ├── home                          // Vista inicial y feriados
+    │   ├── profile                       // Perfil e historial
+    │   └── quiz                          // Ejecución y resultado del cuestionario
+    └── theme                             // Tema visual, tipografía y paleta de colores
 ```
 
-## Reglas de negocio
+---
 
-- Nombres y apellidos: mínimo 3 caracteres.
-- Correo: debe terminar en `@carabineros.cl`.
-- Contraseña: mínimo 6 caracteres, una mayúscula y un número; se guarda con hash SHA-256.
-- Cerrar sesión siempre pide confirmación.
+## Pruebas Unitarias (`app/src/test/java/com/example/parcial2`)
 
-## Cómo ejecutar
+El proyecto incluye tests unitarios para repositorios, validaciones, modelos y ViewModels utilizando JUnit 4, corrutinas de prueba y fakes para desacoplar el acceso a red:
 
-1. Abrir el proyecto en Android Studio.
-2. Esperar a que Gradle sincronice.
-3. Ejecutar en un emulador o dispositivo con Android 13 (API 33) o superior.
+- `ValidacionesTest`: Reglas de validación de nombres, correo institucional, contraseña y confirmación.
+- `UserRepositoryTest`: Casos de éxito y error en registro e inicio de sesión frente a respuestas simuladas de la API.
+- `ResultadoQuizTest`: Cálculo de propiedades como porcentaje de aciertos.
+- `LoginViewModelTest`: Comportamiento reactivo, estados UI y validaciones del login.
+- `HomeViewModelTest`: Carga de feriados y manejo de errores en Home.
+- `QuizViewModelTest`: Flujo completo de respuesta a preguntas y finalización del quiz.
+- `PerfilUiStateTest`: Estadísticas calculadas (total de intentos y promedio).
+- `fakes/`: Implementaciones de prueba (`FakeBackendApi`, `FakeFeriadosApi`, `ErrorHttpFalso`).
 
-## Nota sobre el contenido
+Para ejecutar los tests unitarios:
 
-Los cursos, preguntas y justificaciones legales son contenido de ejemplo. Las referencias legales deben verificarse contra el texto vigente.
+```bash
+./gradlew testDebugUnitTest
+```
+
+---
+
+## Requisitos y Ejecución
+
+- **Android SDK**: `minSdk 33`, `targetSdk 37`, `compileSdk 37`.
+- **Java**: Versión 11.
+- **Configuración local (`local.properties`)**:
+  - Permite definir la URL base del microservicio:
+    ```properties
+    BASE_URL=http://10.0.2.2:8080/
+    ```
+
+---
 
 ## Autores
 
