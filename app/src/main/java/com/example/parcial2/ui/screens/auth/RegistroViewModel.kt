@@ -25,7 +25,20 @@ data class RegistroUiState(
     val errorConfirmacion: String? = null,
     val errorGeneral: String? = null,
     val cargando: Boolean = false
-)
+) {
+    // El botón solo se habilita si todo está lleno y no hay errores pendientes
+    val puedeEnviar: Boolean
+        get() = nombres.isNotBlank() &&
+                apellidos.isNotBlank() &&
+                email.isNotBlank() &&
+                password.isNotBlank() &&
+                confirmacion.isNotBlank() &&
+                errorNombres == null &&
+                errorApellidos == null &&
+                errorEmail == null &&
+                errorPassword == null &&
+                errorConfirmacion == null
+}
 
 class RegistroViewModel(private val repository: UserRepository) : ViewModel() {
 
@@ -46,7 +59,9 @@ class RegistroViewModel(private val repository: UserRepository) : ViewModel() {
     }
 
     fun onPasswordChange(valor: String) {
-        _uiState.update { it.copy(password = valor, errorPassword = null, errorGeneral = null) }
+        _uiState.update {
+            it.copy(password = valor, errorPassword = null, errorConfirmacion = null, errorGeneral = null)
+        }
     }
 
     fun onConfirmacionChange(valor: String) {
