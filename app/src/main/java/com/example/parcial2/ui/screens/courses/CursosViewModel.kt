@@ -4,17 +4,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.parcial2.data.repository.StudyRepository
 import com.example.parcial2.domain.model.Curso
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 data class CursosUiState(
     val cursos: List<Curso> = emptyList(),
-    val cargando: Boolean = true
+    val cargando: Boolean = true,
+    val error: String? = null
 )
 
 class CursosViewModel(private val repository: StudyRepository) : ViewModel() {
@@ -27,10 +26,17 @@ class CursosViewModel(private val repository: StudyRepository) : ViewModel() {
         cargarCursos()
     }
 
-    private fun cargarCursos() {
+    fun cargarCursos() {
+        _uiState.update { it.copy(cargando = true, error = null) }
         viewModelScope.launch {
-            val cursos = withContext(Dispatchers.IO) { repository.obtenerCursos() }
-            _uiState.update { it.copy(cursos = cursos, cargando = false) }
+            repository.obtenerCursos().fold(
+                onSuccess = { cursos ->
+                    _uiState.update { it.copy(cursos = cursos, cargando = false, error = null) }
+                },
+                onFailure = { e ->
+                    _uiState.update { it.copy(cargando = false, error = e.message) }
+                }
+            )
         }
     }
 }

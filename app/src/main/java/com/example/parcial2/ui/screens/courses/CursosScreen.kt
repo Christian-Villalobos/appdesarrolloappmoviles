@@ -25,6 +25,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.parcial2.domain.model.Curso
+import com.example.parcial2.ui.components.VistaError
 import com.example.parcial2.ui.theme.Parcial2Theme
 
 // Versión "conectada" al ViewModel
@@ -39,6 +40,7 @@ fun CursosScreen(
     CursosContent(
         uiState = uiState,
         onCursoClick = onCursoClick,
+        onReintentar = viewModel::cargarCursos,
         modifier = modifier
     )
 }
@@ -48,6 +50,7 @@ fun CursosScreen(
 fun CursosContent(
     uiState: CursosUiState,
     onCursoClick: (Int) -> Unit,
+    onReintentar: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     when {
@@ -55,6 +58,14 @@ fun CursosContent(
             Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
+        }
+
+        uiState.error != null -> {
+            VistaError(
+                mensaje = uiState.error,
+                onReintentar = onReintentar,
+                modifier = modifier
+            )
         }
 
         uiState.cursos.isEmpty() -> {

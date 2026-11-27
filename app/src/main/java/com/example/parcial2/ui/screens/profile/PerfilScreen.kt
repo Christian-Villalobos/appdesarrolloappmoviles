@@ -23,6 +23,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -62,6 +63,7 @@ fun PerfilScreen(
         usuario = usuario,
         uiState = uiState,
         onCerrarSesion = onCerrarSesion,
+        onReintentar = viewModel::cargar,
         modifier = modifier
     )
 }
@@ -72,6 +74,7 @@ fun PerfilContent(
     usuario: Usuario?,
     uiState: PerfilUiState,
     onCerrarSesion: () -> Unit,
+    onReintentar: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     LazyColumn(
@@ -114,6 +117,25 @@ fun PerfilContent(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     CircularProgressIndicator()
+                }
+            }
+        } else if (uiState.error != null) {
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = uiState.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedButton(onClick = onReintentar) {
+                        Text("Reintentar")
+                    }
                 }
             }
         } else {
