@@ -5,8 +5,17 @@ object Validaciones {
 
     private val REGEX_EMAIL = Regex("^[A-Za-z0-9._%+-]+@carabineros\\.cl$")
 
-    fun validarNombre(valor: String, campo: String): String? =
-        if (valor.trim().length < 3) "El campo $campo debe tener al menos 3 caracteres" else null
+    // \p{L} significa "cualquier letra" (incluye tildes y ñ). También permitimos espacios.
+    private val REGEX_NOMBRE = Regex("^[\\p{L} ]+$")
+
+    fun validarNombre(valor: String, campo: String): String? {
+        val limpio = valor.trim()
+        return when {
+            limpio.length < 3 -> "El campo $campo debe tener al menos 3 caracteres"
+            !REGEX_NOMBRE.matches(limpio) -> "El campo $campo solo puede contener letras y espacios"
+            else -> null
+        }
+    }
 
     fun validarEmail(email: String): String? {
         val limpio = email.trim().lowercase()

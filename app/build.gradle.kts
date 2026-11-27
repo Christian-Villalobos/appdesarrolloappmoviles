@@ -8,6 +8,15 @@ val localProperties = Properties().apply {
 }
 val baseUrl: String = localProperties.getProperty("BASE_URL") ?: "http://10.0.2.2:8080/"
 
+// Credenciales de firma: viven en keystore.properties, un archivo local fuera de Git
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) {
+        file.inputStream().use { load(it) }
+    }
+}
+val tieneKeystore = keystoreProperties.containsKey("storeFile")
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -30,8 +39,23 @@ android {
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
     }
 
+    // Solo se crea la firma "release" si existe keystore.properties
+    signingConfigs {
+        if (tieneKeystore) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (tieneKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             optimization {
                 enable = false
             }

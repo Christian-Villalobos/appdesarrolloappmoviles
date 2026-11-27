@@ -86,7 +86,8 @@ fun LoginContent(
                 onValueChange = onEmailChange,
                 label = "Correo Electrónico",
                 icono = Icons.Default.Email,
-                tipoTeclado = KeyboardType.Email
+                tipoTeclado = KeyboardType.Email,
+                error = uiState.errorEmail
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -94,7 +95,8 @@ fun LoginContent(
             CampoPassword(
                 value = uiState.password,
                 onValueChange = onPasswordChange,
-                label = "Contraseña"
+                label = "Contraseña",
+                error = uiState.errorPassword
             )
 
             if (uiState.error != null) {
@@ -112,7 +114,8 @@ fun LoginContent(
             BotonPrincipal(
                 texto = "Ingresar",
                 onClick = onIngresar,
-                cargando = uiState.cargando
+                cargando = uiState.cargando,
+                habilitado = uiState.puedeEnviar
             )
 
             Spacer(modifier = Modifier.height(8.dp))

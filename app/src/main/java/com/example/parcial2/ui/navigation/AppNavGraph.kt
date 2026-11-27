@@ -8,6 +8,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
@@ -91,6 +92,9 @@ fun AppNavGraph(
     val mostrarBarraSuperior = rutaActual in rutasProtegidas
 
     val usuario by SessionManager.usuarioActual.collectAsStateWithLifecycle()
+    val destinoInicial = remember {
+        if (SessionManager.usuarioActual.value != null) NavRoutes.Home.ruta else NavRoutes.Login.ruta
+    }
     var mostrarDialogoCierre by rememberSaveable { mutableStateOf(false) }
 
     // Si no hay sesión y estamos en una pantalla que la requiere, volvemos al Login
@@ -114,7 +118,7 @@ fun AppNavGraph(
     // Después de autenticarse (login o registro) vamos al Home y borramos Login/Registro de la pila
     val irAlHome: () -> Unit = {
         navController.navigate(NavRoutes.Home.ruta) {
-            popUpTo(NavRoutes.Login.ruta) { inclusive = true }
+            popUpTo(0) { inclusive = true }
         }
     }
 
@@ -149,7 +153,7 @@ fun AppNavGraph(
     ) { relleno ->
         NavHost(
             navController = navController,
-            startDestination = NavRoutes.Login.ruta,
+            startDestination = destinoInicial,
             modifier = Modifier
                 .padding(relleno)
                 .consumeWindowInsets(relleno)
