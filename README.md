@@ -60,4 +60,5 @@ Los cursos, preguntas y justificaciones legales son contenido de ejemplo. Las re
 
 ## Autores
 
-- (agrega aquí los nombres del equipo)
+- Christian Villalobos
+- Cristian Ferreira

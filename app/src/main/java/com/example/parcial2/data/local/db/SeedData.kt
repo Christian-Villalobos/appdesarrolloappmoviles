@@ -6,10 +6,21 @@ import com.example.parcial2.data.local.db.DbContract.Cursos
 import com.example.parcial2.data.local.db.DbContract.Preguntas
 import com.example.parcial2.data.local.db.DbContract.Quizzes
 import com.example.parcial2.data.local.db.DbContract.Unidades
+import com.example.parcial2.data.local.db.DbContract.Usuarios
+import java.security.MessageDigest
 
 object SeedData {
 
     fun insertar(db: SQLiteDatabase) {
+
+        // ---------- USUARIO DE PRUEBA ----------
+        insertarUsuario(
+            db,
+            nombres = "Juan",
+            apellidos = "Pérez",
+            email = "juan.perez@carabineros.cl",
+            passwordPlana = "Carabinero1"
+        )
 
         // ---------- CURSO ----------
         val cursoId = insertarCurso(
@@ -107,6 +118,26 @@ object SeedData {
 
     // ---------- Funciones auxiliares: una por tabla ----------
     // Cada una devuelve el id de la fila insertada (Long), que sirve como clave foránea del "hijo".
+
+    private fun insertarUsuario(
+        db: SQLiteDatabase,
+        nombres: String,
+        apellidos: String,
+        email: String,
+        passwordPlana: String
+    ): Long {
+        val hash = MessageDigest.getInstance("SHA-256")
+            .digest(passwordPlana.toByteArray())
+            .joinToString("") { "%02x".format(it) }
+
+        val valores = ContentValues().apply {
+            put(Usuarios.NOMBRES, nombres)
+            put(Usuarios.APELLIDOS, apellidos)
+            put(Usuarios.EMAIL, email.trim().lowercase())
+            put(Usuarios.PASSWORD_HASH, hash)
+        }
+        return db.insert(Usuarios.TABLA, null, valores)
+    }
 
     private fun insertarCurso(db: SQLiteDatabase, nombre: String, descripcion: String): Long {
         val valores = ContentValues().apply {
