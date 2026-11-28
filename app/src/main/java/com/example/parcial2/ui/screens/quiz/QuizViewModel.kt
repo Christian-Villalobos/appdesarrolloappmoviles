@@ -117,7 +117,8 @@ class QuizViewModel(
                 usuarioId = usuarioId,
                 quizId = quizId,
                 aciertos = estado.aciertos,
-                totalPreguntas = estado.preguntas.size
+                totalPreguntas = estado.preguntas.size,
+                tituloQuiz = estado.titulo
             ).fold(
                 onSuccess = { resultado ->
                     _uiState.update { it.copy(cargando = false, resultado = resultado) }

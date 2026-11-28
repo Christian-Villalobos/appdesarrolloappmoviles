@@ -36,7 +36,15 @@ object RetrofitClient {
                 } else {
                     requestOriginal
                 }
-                chain.proceed(request)
+
+                val response = chain.proceed(request)
+
+                // Si el backend responde 401 estando autenticados, el token expiró o es inválido
+                if (esBackendPropio && response.code == 401 && !token.isNullOrBlank()) {
+                    SessionManager.cerrarSesion()
+                }
+
+                response
             }
             .addInterceptor(logging)
             .connectTimeout(15, TimeUnit.SECONDS)

@@ -3,7 +3,7 @@ package com.example.parcial2.data.local.db
 object DbContract {
 
     const val DB_NAME = "parcial2.db"
-    const val DB_VERSION = 3
+    const val DB_VERSION = 4
 
     object Usuarios {
         const val TABLA = "usuarios"
@@ -53,6 +53,7 @@ object DbContract {
         const val ID = "id"
         const val USUARIO_ID = "usuario_id"
         const val QUIZ_ID = "quiz_id"
+        const val TITULO_QUIZ = "titulo_quiz"
         const val ACIERTOS = "aciertos"
         const val TOTAL_PREGUNTAS = "total_preguntas"
         const val FECHA = "fecha"
