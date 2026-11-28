@@ -134,6 +134,16 @@ Para ejecutar los tests unitarios:
   - Permite definir la URL base del microservicio `quiz-carabineros-backend` (puerto `8080`):
     - **Emulador Android:** `BASE_URL=http://10.0.2.2:8080/`
     - **Dispositivo físico (misma red Wi-Fi):** `BASE_URL=http://<IP_LOCAL_DE_TU_PC>:8080/`
+  - **Alternativa si `10.0.2.2` da timeout (firewalls/antivirus o PCs de laboratorio):**
+    1. Con el emulador abierto, ejecutar:
+       ```bash
+       adb reverse tcp:8080 tcp:8080
+       ```
+    2. Configurar en `local.properties`:
+       ```properties
+       BASE_URL=http://localhost:8080/
+       ```
+    *(Debe re-ejecutarse `adb reverse` cada vez que se reinicie el emulador).*
   - `AndroidManifest.xml` incluye `android:usesCleartextTraffic="true"` para permitir HTTP en desarrollo local.
 
 ---
