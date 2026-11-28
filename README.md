@@ -9,7 +9,7 @@ Aplicación móvil Android desarrollada en Kotlin con Jetpack Compose para el es
 - **Autenticación y Registro**:
   - Validación de correo institucional con dominio exclusivo `@carabineros.cl`.
   - Verificación de contraseña robusta (longitud mínima, mayúscula y número).
-  - Manejo de sesión persistente mediante `SessionManager` (`SharedPreferences`) y autenticación basada en tokens JWT.
+  - Manejo de sesión persistente mediante `SessionManager` (`EncryptedSharedPreferences`) y autenticación basada en tokens JWT (con expiración de 24 h y redirección al Login ante respuestas `401`).
 - **Cursos, Unidades y Quizzes**:
   - Navegación estructurada: Cursos → Unidades → Quizzes.
   - Cuestionarios interactivos de selección múltiple (alternativas A, B, C y D).
@@ -49,7 +49,7 @@ com.example.parcial2
 ├── MainActivity.kt
 ├── data
 │   ├── local
-│   │   ├── SessionManager.kt             // Gestión de sesión y token en SharedPreferences
+│   │   ├── SessionManager.kt             // Gestión de sesión y token en EncryptedSharedPreferences
 │   │   ├── dao                           // Interfaces y queries SQLite nativas
 │   │   │   ├── ArchivoDao.kt
 │   │   │   ├── StudyDao.kt
@@ -131,10 +131,10 @@ Para ejecutar los tests unitarios:
 - **Android SDK**: `minSdk 33`, `targetSdk 37`, `compileSdk 37`.
 - **Java**: Versión 11.
 - **Configuración local (`local.properties`)**:
-  - Permite definir la URL base del microservicio:
-    ```properties
-    BASE_URL=http://10.0.2.2:8080/
-    ```
+  - Permite definir la URL base del microservicio `quiz-carabineros-backend` (puerto `8080`):
+    - **Emulador Android:** `BASE_URL=http://10.0.2.2:8080/`
+    - **Dispositivo físico (misma red Wi-Fi):** `BASE_URL=http://<IP_LOCAL_DE_TU_PC>:8080/`
+  - `AndroidManifest.xml` incluye `android:usesCleartextTraffic="true"` para permitir HTTP en desarrollo local.
 
 ---
 
