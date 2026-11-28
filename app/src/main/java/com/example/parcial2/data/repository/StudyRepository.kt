@@ -2,13 +2,13 @@ package com.example.parcial2.data.repository
 
 import com.example.parcial2.data.local.dao.StudyDao
 import com.example.parcial2.data.remote.BackendApiService
-import com.example.parcial2.data.remote.dto.GuardarResultadoRequestDto
 import com.example.parcial2.domain.model.Curso
 import com.example.parcial2.domain.model.HistorialItem
 import com.example.parcial2.domain.model.Pregunta
 import com.example.parcial2.domain.model.Quiz
 import com.example.parcial2.domain.model.ResultadoQuiz
 import com.example.parcial2.domain.model.UnidadConQuizzes
+import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
@@ -56,29 +56,28 @@ class StudyRepository(
         quizId: Int,
         aciertos: Int,
         totalPreguntas: Int
-    ): Result<ResultadoQuiz> = ejecutarConRespaldo(
-        remoto = {
-            api.guardarResultado(
-                GuardarResultadoRequestDto(
-                    quizId = quizId,
-                    aciertos = aciertos,
-                    totalPreguntas = totalPreguntas
-                )
-            ).toDomain()
-        },
-        local = {
+    ): Result<ResultadoQuiz> = withContext(Dispatchers.IO) {
+        try {
             val fecha = System.currentTimeMillis()
             val id = studyDao.insertarResultado(usuarioId, quizId, aciertos, totalPreguntas, fecha)
-            if (id == -1L) null
-            else ResultadoQuiz(id.toInt(), usuarioId, quizId, aciertos, totalPreguntas, fecha)
+            if (id == -1L) {
+                Result.failure(Exception("No se pudo guardar el resultado en el dispositivo."))
+            } else {
+                Result.success(ResultadoQuiz(id.toInt(), usuarioId, quizId, aciertos, totalPreguntas, fecha))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "Error al guardar el resultado."))
         }
-    )
+    }
 
     suspend fun obtenerHistorial(usuarioId: Int): Result<List<HistorialItem>> =
-        ejecutarConRespaldo(
-            remoto = { api.obtenerHistorial().map { it.toDomain() } },
-            local = { studyDao.obtenerHistorial(usuarioId).takeIf { it.isNotEmpty() } }
-        )
+        withContext(Dispatchers.IO) {
+            try {
+                Result.success(studyDao.obtenerHistorial(usuarioId))
+            } catch (e: Exception) {
+                Result.failure(Exception(e.message ?: "Error al cargar el historial."))
+            }
+        }
 
     private suspend fun <T> ejecutarConRespaldo(
         remoto: suspend () -> T,
@@ -87,13 +86,7 @@ class StudyRepository(
         try {
             Result.success(remoto())
         } catch (e: HttpException) {
-            val mensaje = when (e.code()) {
-                401 -> "Tu sesión expiró. Inicia sesión nuevamente."
-                404 -> "Contenido no encontrado en el servidor."
-                in 500..599 -> "Error interno en el servidor (${e.code()})."
-                else -> "Error del servidor (${e.code()})."
-            }
-            Result.failure(Exception(mensaje))
+            Result.failure(Exception(mensajeDeHttp(e)))
         } catch (_: IOException) {
             val respaldo = try { local() } catch (_: Exception) { null }
             if (respaldo != null) {
@@ -103,6 +96,26 @@ class StudyRepository(
             }
         } catch (e: Exception) {
             Result.failure(Exception(e.message ?: "Error inesperado al cargar los datos."))
+        }
+    }
+
+    private fun mensajeDeHttp(e: HttpException): String {
+        val body = e.response()?.errorBody()?.string()
+        if (!body.isNullOrBlank()) {
+            try {
+                val json = JsonParser.parseString(body).asJsonObject
+                val msg = json.get("error")?.asString ?: json.get("message")?.asString
+                if (!msg.isNullOrBlank()) return msg
+            } catch (_: Exception) {
+                // Si el cuerpo no es JSON válido, usamos el respaldo por código HTTP
+            }
+        }
+
+        return when (e.code()) {
+            401 -> "Tu sesión expiró. Inicia sesión nuevamente."
+            404 -> "Contenido no encontrado en el servidor."
+            in 500..599 -> "Error interno en el servidor (${e.code()})."
+            else -> "Error del servidor (${e.code()})."
         }
     }
 }

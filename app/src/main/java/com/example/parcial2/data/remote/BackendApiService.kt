@@ -3,12 +3,9 @@ package com.example.parcial2.data.remote
 import com.example.parcial2.data.remote.dto.AuthResponseDto
 import com.example.parcial2.data.remote.dto.CursoDetalleResponseDto
 import com.example.parcial2.data.remote.dto.CursoDto
-import com.example.parcial2.data.remote.dto.GuardarResultadoRequestDto
-import com.example.parcial2.data.remote.dto.HistorialItemDto
 import com.example.parcial2.data.remote.dto.LoginRequestDto
 import com.example.parcial2.data.remote.dto.QuizPreguntasResponseDto
 import com.example.parcial2.data.remote.dto.RegisterRequestDto
-import com.example.parcial2.data.remote.dto.ResultadoQuizDto
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -34,12 +31,6 @@ interface BackendApiService {
 
     @GET("api/quizzes/{quizId}/preguntas")
     suspend fun obtenerQuizPreguntas(@Path("quizId") quizId: Int): QuizPreguntasResponseDto
-
-    @POST("api/resultados")
-    suspend fun guardarResultado(@Body request: GuardarResultadoRequestDto): ResultadoQuizDto
-
-    @GET("api/resultados/historial")
-    suspend fun obtenerHistorial(): List<HistorialItemDto>
 
     companion object {
         val instancia: BackendApiService by lazy {
