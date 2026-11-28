@@ -92,13 +92,10 @@ class DbHelper private constructor(context: Context) :
                 ${Resultados.ID} INTEGER PRIMARY KEY AUTOINCREMENT,
                 ${Resultados.USUARIO_ID} INTEGER NOT NULL,
                 ${Resultados.QUIZ_ID} INTEGER NOT NULL,
+                ${Resultados.TITULO_QUIZ} TEXT NOT NULL DEFAULT '',
                 ${Resultados.ACIERTOS} INTEGER NOT NULL,
                 ${Resultados.TOTAL_PREGUNTAS} INTEGER NOT NULL,
-                ${Resultados.FECHA} INTEGER NOT NULL,
-                FOREIGN KEY (${Resultados.USUARIO_ID})
-                    REFERENCES ${Usuarios.TABLA}(${Usuarios.ID}) ON DELETE CASCADE,
-                FOREIGN KEY (${Resultados.QUIZ_ID})
-                    REFERENCES ${Quizzes.TABLA}(${Quizzes.ID}) ON DELETE CASCADE
+                ${Resultados.FECHA} INTEGER NOT NULL
             )
             """.trimIndent()
         )

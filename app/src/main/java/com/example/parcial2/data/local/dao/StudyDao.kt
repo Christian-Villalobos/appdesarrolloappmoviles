@@ -151,11 +151,13 @@ class StudyDao(private val dbHelper: DbHelper) {
         quizId: Int,
         aciertos: Int,
         totalPreguntas: Int,
-        fecha: Long
+        fecha: Long,
+        tituloQuiz: String = ""
     ): Long {
         val valores = ContentValues().apply {
             put(Resultados.USUARIO_ID, usuarioId)
             put(Resultados.QUIZ_ID, quizId)
+            put(Resultados.TITULO_QUIZ, tituloQuiz)
             put(Resultados.ACIERTOS, aciertos)
             put(Resultados.TOTAL_PREGUNTAS, totalPreguntas)
             put(Resultados.FECHA, fecha)
@@ -168,9 +170,9 @@ class StudyDao(private val dbHelper: DbHelper) {
         val sql = """
             SELECT r.${Resultados.ID}, r.${Resultados.USUARIO_ID}, r.${Resultados.QUIZ_ID},
                    r.${Resultados.ACIERTOS}, r.${Resultados.TOTAL_PREGUNTAS}, r.${Resultados.FECHA},
-                   q.${Quizzes.TITULO} AS titulo_quiz
+                   COALESCE(NULLIF(r.${Resultados.TITULO_QUIZ}, ''), q.${Quizzes.TITULO}, 'Quiz #' || r.${Resultados.QUIZ_ID}) AS titulo_quiz
             FROM ${Resultados.TABLA} r
-            INNER JOIN ${Quizzes.TABLA} q ON q.${Quizzes.ID} = r.${Resultados.QUIZ_ID}
+            LEFT JOIN ${Quizzes.TABLA} q ON q.${Quizzes.ID} = r.${Resultados.QUIZ_ID}
             WHERE r.${Resultados.USUARIO_ID} = ?
             ORDER BY r.${Resultados.FECHA} DESC, r.${Resultados.ID} DESC
         """.trimIndent()

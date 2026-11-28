@@ -55,11 +55,12 @@ class StudyRepository(
         usuarioId: Int,
         quizId: Int,
         aciertos: Int,
-        totalPreguntas: Int
+        totalPreguntas: Int,
+        tituloQuiz: String = ""
     ): Result<ResultadoQuiz> = withContext(Dispatchers.IO) {
         try {
             val fecha = System.currentTimeMillis()
-            val id = studyDao.insertarResultado(usuarioId, quizId, aciertos, totalPreguntas, fecha)
+            val id = studyDao.insertarResultado(usuarioId, quizId, aciertos, totalPreguntas, fecha, tituloQuiz)
             if (id == -1L) {
                 Result.failure(Exception("No se pudo guardar el resultado en el dispositivo."))
             } else {
